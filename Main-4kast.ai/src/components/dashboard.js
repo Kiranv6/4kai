@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
+import PageTitle from "./PageTitle";
 
 // MUI Core & Theme
 import { ThemeProvider, createTheme } from "@mui/material/styles";
@@ -50,82 +51,6 @@ import Cookies from "js-cookie";
 import { DASHBOARD_ENDPOINT } from "./config";
 import { parseISO, format, isAfter, isBefore, isEqual, subDays, subMonths, startOfYear } from 'date-fns';
 
-// --- DATA FOR NEW DRILL-DOWN CHART ---
-const drillDownRegionData = [
-  { region: "North", Overforecast: 23, Underforecast: 12, Accurate: 65 },
-  { region: "South", Overforecast: 30, Underforecast: 20, Accurate: 50 },
-  { region: "East",  Overforecast: 18, Underforecast: 24, Accurate: 58 },
-  { region: "West",  Overforecast: 10, Underforecast: 15, Accurate: 75 },
-];
-const drillDownProductData = {
-  North: [
-    { product: "Apples", Overforecast: 5, Underforecast: 2, Accurate: 18 },
-    { product: "Oranges", Overforecast: 8, Underforecast: 4, Accurate: 17 },
-    { product: "Berries", Overforecast: 10, Underforecast: 6, Accurate: 30 },
-  ],
-  South: [
-    { product: "Bananas", Overforecast: 12, Underforecast: 8, Accurate: 10 },
-    { product: "Grapes", Overforecast: 8, Underforecast: 2, Accurate: 14 },
-    { product: "Melons", Overforecast: 10, Underforecast: 10, Accurate: 26 },
-  ],
-  East: [
-    { product: "Pears", Overforecast: 6, Underforecast: 11, Accurate: 14 },
-    { product: "Cherries", Overforecast: 7, Underforecast: 5, Accurate: 20 },
-    { product: "Peaches", Overforecast: 5, Underforecast: 8, Accurate: 24 },
-  ],
-  West: [
-    { product: "Apples", Overforecast: 2, Underforecast: 5, Accurate: 28 },
-    { product: "Bananas", Overforecast: 3, Underforecast: 2, Accurate: 20 },
-    { product: "Avocados", Overforecast: 5, Underforecast: 8, Accurate: 27 },
-  ],
-};
-// *** FIX: ADDED COMPLETE MOCK DATA FOR ALL REGIONS/PRODUCTS ***
-const drillDownTimeSeriesData = {
-  North: {
-    Apples: [
-      { date: "06-01", Overforecast: 1, Underforecast: 0, Accurate: 5 }, { date: "06-02", Overforecast: 0, Underforecast: 1, Accurate: 6 }, { date: "06-03", Overforecast: 1, Underforecast: 0, Accurate: 4 }, { date: "06-04", Overforecast: 2, Underforecast: 1, Accurate: 2 }, { date: "06-05", Overforecast: 1, Underforecast: 0, Accurate: 1 },
-    ],
-    Oranges: [
-       { date: "06-01", Overforecast: 2, Underforecast: 1, Accurate: 4 }, { date: "06-02", Overforecast: 1, Underforecast: 0, Accurate: 3 }, { date: "06-03", Overforecast: 2, Underforecast: 2, Accurate: 5 }, { date: "06-04", Overforecast: 1, Underforecast: 1, Accurate: 2 }, { date: "06-05", Overforecast: 2, Underforecast: 0, Accurate: 3 },
-    ],
-    Berries: [
-       { date: "06-01", Overforecast: 3, Underforecast: 1, Accurate: 8 }, { date: "06-02", Overforecast: 2, Underforecast: 2, Accurate: 9 }, { date: "06-03", Overforecast: 1, Underforecast: 1, Accurate: 7 }, { date: "06-04", Overforecast: 2, Underforecast: 1, Accurate: 6 }, { date: "06-05", Overforecast: 2, Underforecast: 1, Accurate: 10 },
-    ],
-  },
-  South: {
-    Bananas: [
-       { date: "06-01", Overforecast: 4, Underforecast: 2, Accurate: 2 }, { date: "06-02", Overforecast: 3, Underforecast: 3, Accurate: 3 }, { date: "06-03", Overforecast: 2, Underforecast: 1, Accurate: 1 }, { date: "06-04", Overforecast: 1, Underforecast: 1, Accurate: 2 }, { date: "06-05", Overforecast: 2, Underforecast: 1, Accurate: 2 },
-    ],
-    Grapes: [
-       { date: "06-01", Overforecast: 2, Underforecast: 0, Accurate: 4 }, { date: "06-02", Overforecast: 2, Underforecast: 1, Accurate: 3 }, { date: "06-03", Overforecast: 1, Underforecast: 0, Accurate: 5 }, { date: "06-04", Overforecast: 2, Underforecast: 1, Accurate: 1 }, { date: "06-05", Overforecast: 1, Underforecast: 0, Accurate: 1 },
-    ],
-    Melons: [
-       { date: "06-01", Overforecast: 3, Underforecast: 3, Accurate: 5 }, { date: "06-02", Overforecast: 2, Underforecast: 2, Accurate: 7 }, { date: "06-03", Overforecast: 1, Underforecast: 2, Accurate: 6 }, { date: "06-04", Overforecast: 2, Underforecast: 1, Accurate: 4 }, { date: "06-05", Overforecast: 2, Underforecast: 2, Accurate: 4 },
-    ],
-  },
-  East: {
-    Pears: [
-       { date: "06-01", Overforecast: 1, Underforecast: 4, Accurate: 3 }, { date: "06-02", Overforecast: 2, Underforecast: 3, Accurate: 5 }, { date: "06-03", Overforecast: 1, Underforecast: 2, Accurate: 4 }, { date: "06-04", Overforecast: 1, Underforecast: 1, Accurate: 1 }, { date: "06-05", Overforecast: 1, Underforecast: 1, Accurate: 1 },
-    ],
-    Cherries: [
-       { date: "06-01", Overforecast: 2, Underforecast: 1, Accurate: 6 }, { date: "06-02", Overforecast: 1, Underforecast: 2, Accurate: 5 }, { date: "06-03", Overforecast: 2, Underforecast: 1, Accurate: 4 }, { date: "06-04", Overforecast: 1, Underforecast: 1, Accurate: 3 }, { date: "06-05", Overforecast: 1, Underforecast: 0, Accurate: 2 },
-    ],
-    Peaches: [
-       { date: "06-01", Overforecast: 1, Underforecast: 2, Accurate: 7 }, { date: "06-02", Overforecast: 2, Underforecast: 2, Accurate: 8 }, { date: "06-03", Overforecast: 1, Underforecast: 1, Accurate: 5 }, { date: "06-04", Overforecast: 0, Underforecast: 2, Accurate: 3 }, { date: "06-05", Overforecast: 1, Underforecast: 1, Accurate: 1 },
-    ],
-  },
-  West: {
-    Apples: [
-       { date: "06-01", Overforecast: 0, Underforecast: 1, Accurate: 8 }, { date: "06-02", Overforecast: 1, Underforecast: 2, Accurate: 9 }, { date: "06-03", Overforecast: 0, Underforecast: 1, Accurate: 6 }, { date: "06-04", Overforecast: 1, Underforecast: 1, Accurate: 3 }, { date: "06-05", Overforecast: 0, Underforecast: 0, Accurate: 2 },
-    ],
-    Bananas: [
-       { date: "06-01", Overforecast: 1, Underforecast: 0, Accurate: 6 }, { date: "06-02", Overforecast: 0, Underforecast: 1, Accurate: 5 }, { date: "06-03", Overforecast: 1, Underforecast: 1, Accurate: 4 }, { date: "06-04", Overforecast: 1, Underforecast: 0, Accurate: 3 }, { date: "06-05", Overforecast: 0, Underforecast: 0, Accurate: 2 },
-    ],
-    Avocados: [
-       { date: "06-01", Overforecast: 1, Underforecast: 2, Accurate: 9 }, { date: "06-02", Overforecast: 2, Underforecast: 2, Accurate: 8 }, { date: "06-03", Overforecast: 1, Underforecast: 1, Accurate: 5 }, { date: "06-04", Overforecast: 0, Underforecast: 2, Accurate: 4 }, { date: "06-05", Overforecast: 1, Underforecast: 1, Accurate: 1 },
-    ],
-  },
-};
 
 // --- DRILL-DOWN CHART COMPONENT ---
 function DrillDownErrorChart({ regionData, productData, timeSeriesData }) {
@@ -267,9 +192,7 @@ function ChartCard({ title, children, onExpand }) {
   return (
     <>
       <Paper sx={{ p: 2, height: '100%', position: 'relative' }}>
-        <IconButton size="small" sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }} onClick={() => setOpen(true)} aria-label={`Expand ${title}`}>
-          <OpenInFullIcon fontSize="small" />
-        </IconButton>
+        
 
         {onExpand && (
           <IconButton
@@ -336,6 +259,8 @@ function FilterBar({ filters, onFilterChange, productFamilies, models, regions, 
     onFilterChange({ ...filters, [field]: event.target.value });
   };
 
+  console.log("FilterBar rendering with props:", { minDate, maxDate, startDate: filters.startDate, endDate: filters.endDate });
+
   return (
     <Paper sx={{ p: 2, mb: 3, borderRadius: 2, boxShadow: '0 8px 12px rgba(0,0,0,0.05)' }}>
       <Grid container spacing={2} alignItems="center">
@@ -396,7 +321,7 @@ function FilterBar({ filters, onFilterChange, productFamilies, models, regions, 
             size="small"
             InputLabelProps={{ shrink: true }}
             value={filters.startDate}
-            inputProps={{ min: minDate, max: maxDate }}
+            inputProps={{ min: minDate, max: filters.endDate }}
             onChange={handleChange('startDate')}
             InputProps={{
               startAdornment: (
@@ -416,7 +341,7 @@ function FilterBar({ filters, onFilterChange, productFamilies, models, regions, 
             size="small"
             InputLabelProps={{ shrink: true }}
             value={filters.endDate}
-            inputProps={{ min: minDate, max: maxDate }}
+            inputProps={{ min: filters.startDate, max: maxDate }}
             onChange={handleChange('endDate')}
             InputProps={{
               startAdornment: (
@@ -703,14 +628,12 @@ function DemandVolatilityGauge({ showTitle = true } ={}) {
 
 function ProductSalesBreakdown({ showTitle = true, data =[], filters } ={}) {
   if (
-    !filters ||
-    filters.region === "All Stores" ||
-    filters.productFamily === "All Products"
+    !filters || !filters.region || filters.region === "All Stores"
   ) {
     return (
       <Box sx={{ p: 3, textAlign: 'center', color: "#888" }}>
         <Typography variant="h6">
-          Please select a specific Store and Product to see the breakdown.
+          Please select a specific Store to see the breakdown.
         </Typography>
       </Box>
     );
@@ -769,16 +692,13 @@ function ProductSalesBreakdown({ showTitle = true, data =[], filters } ={}) {
   );
 }
 
-function ForecastAccuracyWaterfall({ showTitle = true } ={}) {
+function ForecastAccuracyWaterfall({ data = [], showTitle = true } ={}) {
   const rawData = [
     { label: 'Total Forecast', value: 0 },
-    { label: 'Product A', value: 120 },
-    { label: 'Product B', value: -45 },
-    { label: 'Product C', value: 78 },
-    { label: 'Product D', value: -32 },
-    { label: 'Product E', value: 54 },
-    { label: 'Total Actual', isTotal: true }
+     ...data.map(d => ({ label: d.label, value: d.value })),
   ];
+
+   rawData.push({ label: 'Net Variance', isTotal: true });
 
   let cumulative = 0;
   const chartData = rawData.map((d, i) => {
@@ -897,7 +817,6 @@ function KPISection({ data }) {
           title="Total Demand"
           value={formatNumber(Number(data.totalDemand.toFixed(2)))}
           icon={BarChart3}
-          trend={5.2}
           color="blue"
         />
       </Grid>
@@ -906,8 +825,7 @@ function KPISection({ data }) {
         <KPICard
           title="MAPE"
           value={`${data.mape}%`}
-          icon={Target}
-          trend={-2.1}
+          icon={Target} 
           color="blue"
         />
       </Grid>
@@ -916,7 +834,6 @@ function KPISection({ data }) {
           title="MAE"
           value={data.mae}
           icon={AlertCircle}
-          trend={1.5}
           color="green"
         />
       </Grid>
@@ -925,7 +842,6 @@ function KPISection({ data }) {
           title="Forecast Bias"
           value= {data.forecastBias !== undefined && data.forecastBias !== null ? data.forecastBias : "-"}
           icon={TrendingUp}
-          trend={-0.8}
           color="orange"
         />
       </Grid>
@@ -935,7 +851,6 @@ function KPISection({ data }) {
           title="Weighted MAPE"
           value={data.weightedMape !== undefined && data.weightedMape !== null ? data.weightedMape.toFixed(2) + "%" : "-"}
           icon={Target}
-          trend={-1.3}
           color="green"
         />
       </Grid>
@@ -967,10 +882,13 @@ function Dashboard1() {
   const [minDate, setMinDate] = useState('');
   const [maxDate, setMaxDate] = useState('');
 
+
   // The FULL dataset, never overwritten!
   const [fullTimeSeriesData, setFullTimeSeriesData] = useState([]);
   const [timeSeriesData, setTimeSeriesData] = useState([]);
   const [productSalesBreakdown, setProductSalesBreakdown] = useState([]);
+  const [forecastVariance, setForecastVariance] = useState([]);
+  const [drilldownData, setDrilldownData] = useState({ regionData: [], productData: {}, timeSeriesData: {} });
 
 
   // Only these filters can trigger date resets:
@@ -988,21 +906,41 @@ function Dashboard1() {
       setLoading(true);
       try {
         const token = Cookies.get("authToken");
-        const response = await fetch(DASHBOARD_ENDPOINT, {
+        const initialResponse = await fetch(DASHBOARD_ENDPOINT, {
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         });
-        if (!response.ok) throw new Error("Failed to load data");
-        const res = await response.json();
+        if (!initialResponse.ok) throw new Error("Failed to initial filter data");
+        const initialData = await initialResponse.json();
 
-        setProductFamilies(['All Products', ...(res.filters.productList || [])]);
-        setRegions(['All Stores', ...(res.filters.storeList || [])]);
-        setModels(res.filters.modelList || []);
+        const storeList = initialData.filters.storeList || [];
+        const productList = initialData.filters.productList || [];
+        const modelList = initialData.filters.modelList || [];
+
+        // 2. Determine the default store to load
+        const defaultStore = storeList.length > 0 ? storeList[0] : 'All Stores';
+
+        
+        setRegions(['All Stores', ...storeList]);
+        setProductFamilies(['All Products', ...productList]);
+        setModels(modelList);
+
+        const params = new URLSearchParams();
+        if (defaultStore !== 'All Stores') {
+          params.append("store", defaultStore);
+        }
+        
+        const dataResponse = await fetch(`${DASHBOARD_ENDPOINT}?${params.toString()}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!dataResponse.ok) throw new Error("Failed to load dashboard data");
+        const res = await dataResponse.json();
+
         setMinDate(res.filters.minDate || '');
         setMaxDate(res.filters.maxDate || '');
-
+        
         setFullTimeSeriesData(res.timeseries || []);
         setKpiData({
           totalDemand: res.kpiData.total_demand,
@@ -1012,11 +950,17 @@ function Dashboard1() {
           weightedMape: res.kpiData.weighted_mape,
         });
 
+        setForecastVariance(res.forecastVariance || []);
+        setDrilldownData(res.drilldownErrorData || { regionData: [], productData: {}, timeSeriesData: {} });
+        
+        setProductSalesBreakdown(res.productSalesBreakdown || []);
+
         // Only set start/end ONCE here, based on data, to avoid double fetches!
         if ((res.timeseries || []).length) {
+          const defaultStore = storeList.length > 0 ? storeList[0] : 'All Stores';
           setFilters({
             productFamily: 'All Products',
-            region: 'All Stores',
+            region: defaultStore,
             model: (res.filters.modelList && res.filters.modelList[0]) || '',
             startDate: res.timeseries[0].date,
             endDate: res.timeseries[res.timeseries.length - 1].date,
@@ -1117,44 +1061,46 @@ function Dashboard1() {
 
   // Product-sales breakdown chart
   useEffect(() => {
-  if (
-    filters.region &&
-    filters.region !== "All Stores" &&
-    filters.productFamily &&
-    filters.productFamily !== "All Products"
-  ) {
-    const fetchProductSalesBreakdown = async () => {
-      try {
-        const token = Cookies.get("authToken");
-        const params = new URLSearchParams();
-        params.append("store", filters.region);
-        params.append("product", filters.productFamily);
-        if (filters.startDate) params.append("start", filters.startDate);
-        if (filters.endDate) params.append("end", filters.endDate);
+    // This hook now triggers whenever the user changes the store filter.
+    if (filters.region && filters.region !== "All Stores") {
+      const fetchProductSalesBreakdown = async () => {
+        try {
+          const token = Cookies.get("authToken");
+          const params = new URLSearchParams();
+          params.append("store", filters.region);
+          // We don't add product, so the backend gives us all products for the store
+          if (filters.startDate) params.append("start", filters.startDate);
+          if (filters.endDate) params.append("end", filters.endDate);
 
-        const response = await fetch(
-          `${DASHBOARD_ENDPOINT}?${params.toString()}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (!response.ok) throw new Error("Failed to load product sales breakdown");
-        const res = await response.json();
-        setProductSalesBreakdown(res.productSalesBreakdown || []);
-      } catch (err) {
-        setProductSalesBreakdown([]);
+          const response = await fetch(
+            `${DASHBOARD_ENDPOINT}?${params.toString()}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (!response.ok) throw new Error("Failed to load product sales breakdown");
+          const res = await response.json();
+          setProductSalesBreakdown(res.productSalesBreakdown || []);
+        } catch (err) {
+          console.error("Error fetching breakdown data:", err);
+          setProductSalesBreakdown([]);
+        }
+      };
+      
+      // Only fetch if the dashboard is not in its initial loading state.
+      // The initial data is already set by the fetchInit hook.
+      if(!loading) {
+        fetchProductSalesBreakdown();
       }
-    };
-    fetchProductSalesBreakdown();
-  } else {
-    // If filters are not valid, clear the chart
-    setProductSalesBreakdown([]);
-  }
-}, [filters.region, filters.productFamily, filters.startDate, filters.endDate]);
-
+    } else {
+      // If user selects "All Stores", clear the chart.
+      setProductSalesBreakdown([]);
+    }
+  // This now only depends on the store filter, dates, and loading state.
+  }, [filters.region, filters.startDate, filters.endDate, loading]);
 
   // --- Date Range quick-select handler ---
   const handleRangeClick = (range) => {
@@ -1208,12 +1154,7 @@ function Dashboard1() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Dashboard>
-        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-          <BarChart3 size={34} style={{ color: "#1e40af" }} />
-          <Typography variant="h2" sx={{ fontWeight: 900, letterSpacing: 0.5, color: "#1e40af" }}>
-            My Forecast Dashboard
-          </Typography>
-        </Box>
+        <PageTitle title="Dashboard" />
         <FilterBar
           filters={filters}
           onFilterChange={setFilters}
@@ -1251,7 +1192,7 @@ function Dashboard1() {
             </Grid>
             <Grid item xs={12} md={6}>
               <ChartCard title="Forecast Accuracy Analysis" onExpand={() => setExpandedChart('FAAnalysis')}>
-                <ForecastAccuracyWaterfall />
+                <ForecastAccuracyWaterfall data={forecastVariance} />
               </ChartCard>
             </Grid>
             <Grid item xs={12} md={6}>
@@ -1262,15 +1203,10 @@ function Dashboard1() {
             <Grid item xs={12} md={6}>
               <ChartCard title="Forecast Error Drilldown" onExpand={() => setExpandedChart('drilldown')}>
                 <DrillDownErrorChart
-                  regionData={drillDownRegionData}
-                  productData={drillDownProductData}
-                  timeSeriesData={drillDownTimeSeriesData}
+                  regionData={drilldownData.regionData}
+                  productData={drilldownData.productData}
+                  timeSeriesData={drilldownData.timeSeriesData}
                 />
-              </ChartCard>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <ChartCard title="Demand Volatility Index" onExpand={() => setExpandedChart('DVIndex')}>
-                <DemandVolatilityGauge />
               </ChartCard>
             </Grid>
           </Grid>
@@ -1307,9 +1243,9 @@ function Dashboard1() {
             {expandedChart === 'drilldown' && (
               <ChartWrapper>
                 <DrillDownErrorChart
-                  regionData={drillDownRegionData}
-                  productData={drillDownProductData}
-                  timeSeriesData={drillDownTimeSeriesData}
+                  regionData={drilldownData.regionData}
+                  productData={drilldownData.productData}
+                  timeSeriesData={drilldownData.timeSeriesData}
                 />
               </ChartWrapper>
             )}
